@@ -1,0 +1,15 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "my-battery-driver", "my-battery-driver.vcxproj", "{12345678-1234-1234-1234-1234567890AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{12345678-1234-1234-1234-1234567890AB}.Release|x86.ActiveCfg = Release|Win32
+		{12345678-1234-1234-1234-1234567890AB}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+EndGlobal
