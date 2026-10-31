@@ -9,13 +9,19 @@ jobs:
     - name: Add MSBuild
       uses: microsoft/setup-msbuild@v1.1
       
-    - name: Install WDK
+    - name: Install SDK and WDK
       shell: powershell
       run: |
-        # Скачиваем официальный установщик WDK от Microsoft
-        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2166289" -OutFile "wdksetup.exe"
-        # Запускаем установку в тихом режиме
-        Start-Process -FilePath ".\wdksetup.exe" -ArgumentList "/features + /q" -Wait
+        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2196241" -OutFile "$env:TEMP\winsdksetup.exe"
+        Start-Process -FilePath "$env:TEMP\winsdksetup.exe" -ArgumentList "/features + /q" -Wait
+        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2196230" -OutFile "$env:TEMP\wdksetup.exe"
+        Start-Process -FilePath "$env:TEMP\wdksetup.exe" -ArgumentList "/features + /q" -Wait
         
     - name: Build Solution
       run: msbuild my-battery-driver.sln /p:Configuration=Release /p:Platform=x86
+      
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: BatteryDriver-Binary
+        path: x86/Release/
