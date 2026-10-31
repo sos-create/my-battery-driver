@@ -1,28 +1,27 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>{12345678-1234-1234-1234-1234567890AB}</ProjectGuid>
-    <RootNamespace>my-battery-driver</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Label="Configuration">
-    <ConfigurationType>Driver</ConfigurationType>
-    <DriverType>KMDF</DriverType>
-    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ItemGroup>
-    <ClCompile Include="BatteryDriver.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="BatteryDriver.h" />
-  </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-</Project>
+name: Build Driver
+on: [push]
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Add MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+      
+    - name: Install SDK and WDK
+      shell: powershell
+      run: |
+        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2196241" -OutFile "$env:TEMP\winsdksetup.exe"
+        Start-Process -FilePath "$env:TEMP\winsdksetup.exe" -ArgumentList "/features + /q" -Wait
+        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2196230" -OutFile "$env:TEMP\wdksetup.exe"
+        Start-Process -FilePath "$env:TEMP\wdksetup.exe" -ArgumentList "/features + /q" -Wait
+        
+    - name: Build Solution
+      run: msbuild my-battery-driver.sln /p:Configuration=Release /p:Platform=x86
+      
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: BatteryDriver-Binary
+        path: x86/Release/
