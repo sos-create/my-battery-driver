@@ -1,0 +1,48 @@
+[Version]
+Signature="$Windows NT$"
+Class=Battery
+ClassGuid={72631e54-78a4-11d0-bcf7-00aa00b7b32a}
+Provider=%ManufacturerName%
+CatalogFile=BatteryDriver.cat
+DriverVer=01/01/2025,1.0.0.0
+
+[Manufacturer]
+%ManufacturerName%=DeviceList,NTx86,NTamd64
+
+[DeviceList.NTx86]
+%DeviceDesc%=BatteryDevice, ACPI\BAT0000
+
+[DeviceList.NTamd64]
+%DeviceDesc%=BatteryDevice, ACPI\BAT0000
+
+[BatteryDevice]
+Include=batclass.inf
+Needs=BatteryClass.NT
+CopyFiles=DriverFiles
+
+[BatteryDevice.Services]
+AddService=BatteryDriver, 0x00000002, Service_Inst
+
+[Service_Inst]
+DisplayName=%ServiceDisplayName%
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%12%\BatteryDriver.sys
+
+[DriverFiles]
+BatteryDriver.sys
+
+[SourceDisksNames]
+1="Battery Driver Installation Disk",,,
+
+[SourceDisksFiles]
+BatteryDriver.sys=1
+
+[DestinationDirs]
+DriverFiles=10,\System32\drivers
+
+[Strings]
+ManufacturerName="Custom Hardware Vendor"
+DeviceDesc="Custom Battery Miniport Driver"
+ServiceDisplayName="Custom Battery Driver"
