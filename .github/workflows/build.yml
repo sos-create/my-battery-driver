@@ -5,7 +5,13 @@ jobs:
     runs-on: windows-2022
     steps:
     - uses: actions/checkout@v3
+    
     - name: Add MSBuild
       uses: microsoft/setup-msbuild@v1.1
+      
+    - name: Install WDK
+      run: |
+        winget install --id Microsoft.WindowsWDK.10.0.22621 --accept-package-agreements --accept-source-agreements --silent
+        
     - name: Build Solution
       run: msbuild my-battery-driver.sln /p:Configuration=Release /p:Platform=x86
