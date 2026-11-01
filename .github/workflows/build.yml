@@ -95,6 +95,9 @@ jobs:
       - name: Smoke test executables
         shell: pwsh
         run: |
+          $exe = Join-Path $env:GITHUB_WORKSPACE "artifacts\${{ matrix.platform }}\Release\UniversalBatteryManager.exe"
+          $gui = Join-Path $env:GITHUB_WORKSPACE "artifacts\${{ matrix.platform }}\Release\UniversalBatteryManagerGUI.exe"
+
           & $exe --help
           if ($LASTEXITCODE -ne 0) { throw "CLI help smoke test failed" }
 
