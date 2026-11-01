@@ -1,6 +1,8 @@
-#define UNICODE
-#define _UNICODE
 #include <windows.h>
+#include <winioctl.h>
+#ifndef FILE_DEVICE_BATTERY
+#define FILE_DEVICE_BATTERY 0x00000029
+#endif
 #include <setupapi.h>
 #include <devguid.h>
 #include <cfgmgr32.h>
@@ -36,7 +38,7 @@ static void AddText(const WCHAR* format, ...)
     int length;
 
     va_start(args, format);
-    length = _vsnwprintf_s(buffer, _countof(buffer), _TRUNCATE, format, args);
+    length = _vsnwprintf_s(buffer, (sizeof(buffer) / sizeof(buffer[0])), _TRUNCATE, format, args);
     va_end(args);
 
     if (length < 0)
@@ -284,7 +286,7 @@ static void ScanBatteryPnP(void)
                 set, &data, SPDRP_DEVICEDESC, &type,
                 (PBYTE)name, sizeof(name), &needed))
         {
-            wcscpy_s(name, _countof(name), L"Unnamed battery device");
+            wcscpy_s(name, (sizeof(name) / sizeof(name[0])), L"Unnamed battery device");
         }
 
         ZeroMemory(service, sizeof(service));
