@@ -1,4 +1,3 @@
-
 #include "BatteryDriver.h"
 
 static void PrintSeparator(void)
