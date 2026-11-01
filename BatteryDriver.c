@@ -918,6 +918,7 @@ int wmain(int argc, wchar_t** argv)
     }
 
     PrintPowerPlans();
+    UBM_PrintAdapterCatalog();
     ScanPresentDevices();
 
     wprintf(L"\nPress Q to stop monitoring.\n");

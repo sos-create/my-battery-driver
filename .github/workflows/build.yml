@@ -42,6 +42,9 @@ jobs:
             "my-battery-driver.sln",
             "my-battery-driver.vcxproj",
             "BatteryGui.c",
+            "BatteryAdapters.c",
+            "BatteryAdapters.h",
+            "README.md",
             "UniversalBatteryManagerGUI.vcxproj"
           )
 

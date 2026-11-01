@@ -81,10 +81,12 @@
 
   <ItemGroup>
     <ClCompile Include="BatteryDriver.c" />
+    <ClCompile Include="BatteryAdapters.c" />
   </ItemGroup>
 
   <ItemGroup>
     <ClInclude Include="BatteryDriver.h" />
+    <ClInclude Include="BatteryAdapters.h" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

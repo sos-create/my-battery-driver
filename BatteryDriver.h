@@ -16,6 +16,7 @@
 #include <devguid.h>
 #include <devpkey.h>
 #include <poclass.h>
+#include "BatteryAdapters.h"
 #include <powrprof.h>
 
 #ifndef FILE_DEVICE_BATTERY

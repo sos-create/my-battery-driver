@@ -8,6 +8,7 @@
 #include <cfgmgr32.h>
 #include <powrprof.h>
 #include <poclass.h>
+#include "BatteryAdapters.h"
 #include <stdio.h>
 #include <wchar.h>
 #include <stdarg.h>
@@ -339,6 +340,7 @@ static void RefreshDashboard(void)
         AddText(L"GetSystemPowerStatus failed: %lu\r\n", GetLastError());
 
     ShowActivePowerPlan();
+    { size_t n=0,i; const UBM_ADAPTER_DESCRIPTOR* a=UBM_GetAdapterCatalog(&n); AddText(L"\\r\\n=== ADAPTER CATALOG ===\\r\\n"); for(i=0;i<n;++i) AddText(L"%ls: %ls\\r\\n",a[i].name,a[i].currentSupport); }
     ScanBatteryPnP();
     ScanBatteryInterfaces();
 
@@ -384,6 +386,7 @@ static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPA
         );
         SendMessageW(g_output, WM_SETFONT,
             (WPARAM)GetStockObject(ANSI_FIXED_FONT), TRUE);
+        SetTimer(window, 1, 5000, NULL);
         RefreshDashboard();
         return 0;
 
@@ -391,6 +394,10 @@ static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPA
         if (g_output != NULL)
             MoveWindow(g_output, 12, 52,
                 LOWORD(lParam) - 24, HIWORD(lParam) - 64, TRUE);
+        return 0;
+
+    case WM_TIMER:
+        if (wParam == 1) RefreshDashboard();
         return 0;
 
     case WM_COMMAND:
@@ -404,6 +411,7 @@ static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPA
         break;
 
     case WM_DESTROY:
+        KillTimer(window, 1);
         PostQuitMessage(0);
         return 0;
     }

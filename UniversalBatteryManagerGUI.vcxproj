@@ -42,6 +42,7 @@
       <AdditionalDependencies>Setupapi.lib;Cfgmgr32.lib;PowrProf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup><ClCompile Include="BatteryGui.c" /></ItemGroup>
+  <ItemGroup><ClCompile Include="BatteryGui.c" /><ClCompile Include="BatteryAdapters.c" /></ItemGroup>
+  <ItemGroup><ClInclude Include="BatteryAdapters.h" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
