@@ -1,4 +1,3 @@
-
 #pragma once
 
 #ifndef UNICODE
@@ -15,17 +14,20 @@
 #include <cfg.h>
 #include <devguid.h>
 #include <devpkey.h>
+#include <poclass.h>
 #include <stdio.h>
 #include <wchar.h>
 #include <wctype.h>
+#include <conio.h>
 
 #define APP_NAME L"Universal Battery Manager"
-#define APP_VERSION L"0.2.0"
+#define APP_VERSION L"0.3.0"
 #define MAX_INSTANCE_ID 1024
 #define MAX_DEVICE_NAME 512
 #define MAX_CLASS_NAME 128
 #define MAX_MANUFACTURER 256
 #define MAX_HARDWARE_IDS 2048
+#define BATTERY_POLL_INTERVAL_MS 5000
 
 typedef struct _DEVICE_INFO
 {
@@ -61,6 +63,7 @@ BOOL ReadDeviceInfo(
 );
 
 void ScanPresentDevices(void);
+void ScanBatteryInterfaces(void);
 
 void PrintDevice(
     const DEVICE_INFO* device
