@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <wchar.h>
 #include <stdarg.h>
+#include <strsafe.h>
 
 #pragma comment(lib, "Setupapi.lib")
 #pragma comment(lib, "Cfgmgr32.lib")
@@ -306,6 +307,89 @@ static void ScanBatteryPnP(void)
         AddText(L"No present battery-class PnP devices found.\r\n");
 }
 
+
+static void ScanExternalAdapterDevices(void)
+{
+    HDEVINFO set;
+    DWORD index;
+    DWORD matches = 0;
+
+    AddText(L"\r\n=== EXTERNAL ADAPTER PROBES ===\r\n");
+    if (UBM_GetExternalAdapterCount() == 0)
+    {
+        AddText(L"No external adapters loaded. Place trusted ABI-compatible DLLs in the Adapters folder.\r\n");
+        return;
+    }
+
+    set = SetupDiGetClassDevsW(NULL, NULL, NULL,
+        DIGCF_PRESENT | DIGCF_ALLCLASSES);
+    if (set == INVALID_HANDLE_VALUE)
+    {
+        AddText(L"Device enumeration failed: %lu\r\n", GetLastError());
+        return;
+    }
+
+    for (index = 0; index < 2048; ++index)
+    {
+        SP_DEVINFO_DATA data;
+        UBM_DEVICE_DESCRIPTOR device;
+        UBM_TELEMETRY telemetry;
+        const WCHAR* adapterName = NULL;
+        WCHAR name[512];
+        DWORD type = 0, needed = 0;
+
+        ZeroMemory(&data, sizeof(data));
+        data.cbSize = sizeof(data);
+        if (!SetupDiEnumDeviceInfo(set, index, &data))
+            break;
+
+        ZeroMemory(&device, sizeof(device));
+        ZeroMemory(name, sizeof(name));
+        if (!SetupDiGetDeviceInstanceIdW(
+            set, &data, device.instanceId,
+            (DWORD)(sizeof(device.instanceId) / sizeof(device.instanceId[0])),
+            NULL))
+            continue;
+
+        if (SetupDiGetDeviceRegistryPropertyW(
+            set, &data, SPDRP_FRIENDLYNAME, &type,
+            (PBYTE)name, sizeof(name), &needed) ||
+            SetupDiGetDeviceRegistryPropertyW(
+            set, &data, SPDRP_DEVICEDESC, &type,
+            (PBYTE)name, sizeof(name), &needed))
+        {
+            StringCchCopyW(device.description,
+                sizeof(device.description) / sizeof(device.description[0]), name);
+        }
+
+        ZeroMemory(device.hardwareIds, sizeof(device.hardwareIds));
+        SetupDiGetDeviceRegistryPropertyW(
+            set, &data, SPDRP_HARDWAREID, &type,
+            (PBYTE)device.hardwareIds, sizeof(device.hardwareIds), &needed);
+
+        if (UBM_QueryExternalAdapters(&device, &telemetry, &adapterName))
+        {
+            AddText("%ls matched device: %ls\r\n",
+                adapterName ? adapterName : L"External adapter",
+                device.description[0] ? device.description : device.instanceId);
+            if (telemetry.validFlags & UBM_TELEMETRY_PERCENT)
+                AddText(L"  Charge: %.1f%%\r\n", telemetry.chargePercent);
+            if (telemetry.validFlags & UBM_TELEMETRY_TEMPERATURE)
+                AddText(L"  Temperature: %.1f C\r\n", telemetry.temperatureC);
+            if (telemetry.validFlags & UBM_TELEMETRY_VOLTAGE)
+                AddText(L"  Voltage: %lu mV\r\n", telemetry.voltageMillivolts);
+            if (telemetry.validFlags & UBM_TELEMETRY_POWER_RATE)
+                AddText(L"  Power rate: %ld mW\r\n", telemetry.powerRateMilliwatts);
+            if (telemetry.validFlags & UBM_TELEMETRY_CYCLE_COUNT)
+                AddText(L"  Cycle count: %lu\r\n", telemetry.cycleCount);
+            ++matches;
+        }
+    }
+
+    SetupDiDestroyDeviceInfoList(set);
+    AddText(L"External adapter matches: %lu\r\n", matches);
+}
+
 static void RefreshDashboard(void)
 {
     SYSTEM_POWER_STATUS power;
@@ -346,6 +430,7 @@ static void RefreshDashboard(void)
     { size_t ai; for (ai=0; ai<UBM_GetExternalAdapterCount(); ++ai) AddText(L"  Plugin: %ls\\r\\n", UBM_GetExternalAdapterName(ai)); }
     ScanBatteryPnP();
     ScanBatteryInterfaces();
+    ScanExternalAdapterDevices();
 
     AddText(L"\r\n=== PROTOCOL AND SAFETY NOTES ===\r\n");
     AddText(L"Individual telemetry is queried through the Windows Battery Class interface.\r\n");
@@ -434,6 +519,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE previous, PWSTR commandLine, i
         SYSTEM_POWER_STATUS power;
         HDEVINFO batterySet;
         if (!GetSystemPowerStatus(&power)) return 2;
+        if (UBM_LoadExternalAdapters() == 0) return 4;
         batterySet = SetupDiGetClassDevsW(
             &GUID_DEVCLASS_BATTERY, NULL, NULL, DIGCF_PRESENT
         );

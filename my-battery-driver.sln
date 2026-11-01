@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UniversalBatteryManager", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UniversalBatteryManagerGUI", "UniversalBatteryManagerGUI.vcxproj", "{D0B87A62-0C3A-4B2D-AE6D-77F1B8E45102}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UniversalBatteryManagerAdapterTemplate", "UniversalBatteryManagerAdapterTemplate.vcxproj", "{E17A61B2-93F5-4D43-9F22-61E2F4E35103}"
+EndProject
 
 Global
     GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,5 +27,10 @@ Global
         {D0B87A62-0C3A-4B2D-AE6D-77F1B8E45102}.Release|Win32.Build.0 = Release|Win32
         {D0B87A62-0C3A-4B2D-AE6D-77F1B8E45102}.Release|x64.ActiveCfg = Release|x64
         {D0B87A62-0C3A-4B2D-AE6D-77F1B8E45102}.Release|x64.Build.0 = Release|x64
+
+        {E17A61B2-93F5-4D43-9F22-61E2F4E35103}.Release|Win32.ActiveCfg = Release|Win32
+        {E17A61B2-93F5-4D43-9F22-61E2F4E35103}.Release|Win32.Build.0 = Release|Win32
+        {E17A61B2-93F5-4D43-9F22-61E2F4E35103}.Release|x64.ActiveCfg = Release|x64
+        {E17A61B2-93F5-4D43-9F22-61E2F4E35103}.Release|x64.Build.0 = Release|x64
     EndGlobalSection
 EndGlobal

@@ -26,3 +26,6 @@ No battery-controller registers are written. Temperature, cycle count, voltage, 
 The GUI looks for adapter DLLs in an `Adapters` directory beside the executable. A module must export `UBM_GetAdapterPlugin` and return a descriptor using the versioned contract in `BatteryAdapterSdk.h`. The host validates the ABI version and required callbacks before accepting the module. An adapter can identify matching hardware and return telemetry fields supported by its device.
 
 Only install DLLs from sources you trust: loading an adapter executes its code inside the application. The current adapter contract is read-only; it does not authorize arbitrary register writes or Windows kernel-driver installation. No external adapters are bundled by default.
+
+
+A non-matching starter module is built as `Adapters/UniversalBatteryManagerAdapterTemplate.dll`. It demonstrates the versioned ABI and deliberately reports no matching hardware. Copy trusted, compatible adapter DLLs into the same `Adapters` directory. The GUI smoke test verifies that the template module can be loaded.

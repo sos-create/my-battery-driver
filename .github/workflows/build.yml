@@ -45,6 +45,8 @@ jobs:
             "BatteryAdapters.c",
             "BatteryAdapters.h",
             "BatteryAdapterSdk.h",
+            "AdapterTemplate.c",
+            "UniversalBatteryManagerAdapterTemplate.vcxproj",
             "README.md",
             "UniversalBatteryManagerGUI.vcxproj"
           )
@@ -86,12 +88,15 @@ jobs:
           }
 
           $gui = Join-Path $env:GITHUB_WORKSPACE "artifacts\${{ matrix.platform }}\Release\UniversalBatteryManagerGUI.exe"
+          $adapter = Join-Path $env:GITHUB_WORKSPACE "artifacts\${{ matrix.platform }}\Release\Adapters\UniversalBatteryManagerAdapterTemplate.dll"
           if (!(Test-Path $gui)) {
             throw "GUI executable not found: $gui"
           }
 
           Write-Host "CLI build successful: $exe"
+          if (!(Test-Path $adapter)) { throw "Adapter template DLL not found: $adapter" }
           Write-Host "GUI build successful: $gui"
+          Write-Host "Adapter template build successful: $adapter"
 
       - name: Smoke test executables
         shell: pwsh
