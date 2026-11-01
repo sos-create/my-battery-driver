@@ -83,6 +83,12 @@ size_t UBM_LoadExternalAdapters(void)
         getAdapter = (UBM_GET_ADAPTER_PLUGIN)GetProcAddress(
             module, "UBM_GetAdapterPlugin"
         );
+#if defined(_M_IX86)
+        if (getAdapter == NULL)
+            getAdapter = (UBM_GET_ADAPTER_PLUGIN)GetProcAddress(module, "_UBM_GetAdapterPlugin@4");
+        if (getAdapter == NULL)
+            getAdapter = (UBM_GET_ADAPTER_PLUGIN)GetProcAddress(module, "UBM_GetAdapterPlugin@4");
+#endif
         if (getAdapter == NULL)
         {
             FreeLibrary(module);

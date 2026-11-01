@@ -369,7 +369,7 @@ static void ScanExternalAdapterDevices(void)
 
         if (UBM_QueryExternalAdapters(&device, &telemetry, &adapterName))
         {
-            AddText("%ls matched device: %ls\r\n",
+            AddText(L"%ls matched device: %ls\r\n",
                 adapterName ? adapterName : L"External adapter",
                 device.description[0] ? device.description : device.instanceId);
             if (telemetry.validFlags & UBM_TELEMETRY_PERCENT)
