@@ -20,3 +20,9 @@ Windows Battery Class supports read-only battery telemetry. ACPI Control Method 
 
 ## Safety and limitations
 No battery-controller registers are written. Temperature, cycle count, voltage, capacity and charge state depend on hardware and Windows driver support. Generic software cannot safely control proprietary controllers without protocol documentation or a verified adapter. Windows power-plan changes do not change proprietary battery charge thresholds.
+
+## External adapter modules
+
+The GUI looks for adapter DLLs in an `Adapters` directory beside the executable. A module must export `UBM_GetAdapterPlugin` and return a descriptor using the versioned contract in `BatteryAdapterSdk.h`. The host validates the ABI version and required callbacks before accepting the module. An adapter can identify matching hardware and return telemetry fields supported by its device.
+
+Only install DLLs from sources you trust: loading an adapter executes its code inside the application. The current adapter contract is read-only; it does not authorize arbitrary register writes or Windows kernel-driver installation. No external adapters are bundled by default.

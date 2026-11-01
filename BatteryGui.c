@@ -339,8 +339,11 @@ static void RefreshDashboard(void)
     else
         AddText(L"GetSystemPowerStatus failed: %lu\r\n", GetLastError());
 
+    UBM_LoadExternalAdapters();
     ShowActivePowerPlan();
     { size_t n=0,i; const UBM_ADAPTER_DESCRIPTOR* a=UBM_GetAdapterCatalog(&n); AddText(L"\\r\\n=== ADAPTER CATALOG ===\\r\\n"); for(i=0;i<n;++i) AddText(L"%ls: %ls\\r\\n",a[i].name,a[i].currentSupport); }
+    AddText(L"External adapter modules loaded: %llu\\r\\n", (unsigned long long)UBM_GetExternalAdapterCount());
+    { size_t ai; for (ai=0; ai<UBM_GetExternalAdapterCount(); ++ai) AddText(L"  Plugin: %ls\\r\\n", UBM_GetExternalAdapterName(ai)); }
     ScanBatteryPnP();
     ScanBatteryInterfaces();
 

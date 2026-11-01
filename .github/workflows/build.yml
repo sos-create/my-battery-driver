@@ -44,6 +44,7 @@ jobs:
             "BatteryGui.c",
             "BatteryAdapters.c",
             "BatteryAdapters.h",
+            "BatteryAdapterSdk.h",
             "README.md",
             "UniversalBatteryManagerGUI.vcxproj"
           )

@@ -43,6 +43,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup><ClCompile Include="BatteryGui.c" /><ClCompile Include="BatteryAdapters.c" /></ItemGroup>
-  <ItemGroup><ClInclude Include="BatteryAdapters.h" /></ItemGroup>
+  <ItemGroup><ClInclude Include="BatteryAdapters.h" />
+  <ClInclude Include="BatteryAdapterSdk.h" /></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

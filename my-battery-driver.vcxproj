@@ -87,6 +87,7 @@
   <ItemGroup>
     <ClInclude Include="BatteryDriver.h" />
     <ClInclude Include="BatteryAdapters.h" />
+    <ClInclude Include="BatteryAdapterSdk.h" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
