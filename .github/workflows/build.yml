@@ -40,7 +40,9 @@ jobs:
             "BatteryDriver.c",
             "BatteryDriver.h",
             "my-battery-driver.sln",
-            "my-battery-driver.vcxproj"
+            "my-battery-driver.vcxproj",
+            "BatteryGui.c",
+            "UniversalBatteryManagerGUI.vcxproj"
           )
 
           foreach ($file in $required) {
@@ -79,7 +81,13 @@ jobs:
             throw "Executable not found: $exe"
           }
 
-          Write-Host "Build successful: $exe"
+          $gui = Join-Path $env:GITHUB_WORKSPACE "artifacts\${{ matrix.platform }}\Release\UniversalBatteryManagerGUI.exe"
+          if (!(Test-Path $gui)) {
+            throw "GUI executable not found: $gui"
+          }
+
+          Write-Host "CLI build successful: $exe"
+          Write-Host "GUI build successful: $gui"
 
       - name: Upload compiled files
         uses: actions/upload-artifact@v4
