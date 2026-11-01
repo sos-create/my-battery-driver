@@ -9,12 +9,17 @@
 #endif
 
 #include <windows.h>
+#include <winioctl.h>
 #include <setupapi.h>
 #include <cfgmgr32.h>
 #include <cfg.h>
 #include <devguid.h>
 #include <devpkey.h>
 #include <poclass.h>
+
+#ifndef FILE_DEVICE_BATTERY
+#define FILE_DEVICE_BATTERY 0x00000029
+#endif
 #include <stdio.h>
 #include <wchar.h>
 #include <wctype.h>
