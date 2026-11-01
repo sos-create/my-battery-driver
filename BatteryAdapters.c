@@ -41,7 +41,7 @@ size_t UBM_LoadExternalAdapters(void)
         return g_externalAdapterCount;
     g_externalAdaptersLoaded = TRUE;
 
-    if (!GetModuleFileNameW(NULL, modulePath, _countof(modulePath)))
+    if (!GetModuleFileNameW(NULL, modulePath, (sizeof(modulePath)/sizeof(modulePath[0]))))
         return 0;
 
     slash = wcsrchr(modulePath, L'\\');
@@ -50,7 +50,7 @@ size_t UBM_LoadExternalAdapters(void)
     *slash = L'\0';
 
     if (FAILED(StringCchPrintfW(
-        searchPath, _countof(searchPath), L"%ls\\Adapters\\*.dll", modulePath)))
+        searchPath, (sizeof(searchPath)/sizeof(searchPath[0])), L"%ls\\Adapters\\*.dll", modulePath)))
         return 0;
 
     findHandle = FindFirstFileW(searchPath, &findData);
@@ -69,7 +69,7 @@ size_t UBM_LoadExternalAdapters(void)
             continue;
 
         if (FAILED(StringCchPrintfW(
-            dllPath, _countof(dllPath), L"%ls\\Adapters\\%ls",
+            dllPath, (sizeof(dllPath)/sizeof(dllPath[0])), L"%ls\\Adapters\\%ls",
             modulePath, findData.cFileName)))
             continue;
 
