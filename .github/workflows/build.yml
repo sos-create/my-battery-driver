@@ -116,6 +116,9 @@ jobs:
       - name: Package release files
         shell: pwsh
         run: |
+          $exe = Join-Path $env:GITHUB_WORKSPACE "artifacts\${{ matrix.platform }}\Release\UniversalBatteryManager.exe"
+          $gui = Join-Path $env:GITHUB_WORKSPACE "artifacts\${{ matrix.platform }}\Release\UniversalBatteryManagerGUI.exe"
+          $adapter = Join-Path $env:GITHUB_WORKSPACE "artifacts\${{ matrix.platform }}\Release\Adapters\UniversalBatteryManagerAdapterTemplate.dll"
           $dist = Join-Path $env:GITHUB_WORKSPACE "dist"
           $adapterDir = Join-Path $dist "Adapters"
           New-Item -ItemType Directory -Force -Path $adapterDir | Out-Null
