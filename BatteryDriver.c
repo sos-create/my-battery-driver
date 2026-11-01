@@ -805,7 +805,7 @@ void PrintPowerPlans(void)
             NULL, &scheme, NULL, NULL, (UCHAR*)name, &nameSize
         ) != ERROR_SUCCESS || name[0] == L'\0')
         {
-            wcscpy_s(name, _countof(name), L"Unnamed power plan");
+            wcscpy_s(name, sizeof(name) / sizeof(name[0]), L"Unnamed power plan");
         }
 
         wprintf(L"%c %ls\n",
@@ -897,7 +897,27 @@ int wmain(int argc, wchar_t** argv)
     wprintf(L"Polling interval: %u seconds\n",
         BATTERY_POLL_INTERVAL_MS / 1000);
     wprintf(L"Hardware writes: DISABLED\n");
+    wprintf(L"Windows power-plan API: AVAILABLE\n");
 
+    if (argc >= 2 && _wcsicmp(argv[1], L"--list-plans") == 0)
+    {
+        PrintPowerPlans();
+        return 0;
+    }
+    if (argc >= 3 && _wcsicmp(argv[1], L"--set-plan") == 0)
+    {
+        if (!SetPowerPlanByName(argv[2]))
+            return 2;
+        PrintPowerPlans();
+        return 0;
+    }
+    if (argc >= 2 && _wcsicmp(argv[1], L"--help") == 0)
+    {
+        wprintf(L"Options:\\n  --list-plans\\n  --set-plan balanced|performance|saver\\n");
+        return 0;
+    }
+
+    PrintPowerPlans();
     ScanPresentDevices();
 
     wprintf(L"\nPress Q to stop monitoring.\n");
