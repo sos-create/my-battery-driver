@@ -183,6 +183,11 @@ BOOL ReadDeviceInfo(
         output->hardwareIds, MAX_HARDWARE_IDS
     );
 
+    ReadRegistryString(
+        deviceSet, deviceData, SPDRP_SERVICE,
+        output->serviceName, MAX_SERVICE_NAME
+    );
+
     output->isPresent = TRUE;
 
     result = CM_Get_DevNode_Status(
@@ -228,11 +233,21 @@ BOOL ReadDeviceInfo(
         ContainsTextInsensitive(output->friendlyName, L"Embedded Controller") ||
         ContainsTextInsensitive(output->description, L"Embedded Controller");
 
-    output->isBusController =
+    output->isSmbusDevice =
         ContainsTextInsensitive(output->friendlyName, L"SMBus") ||
-        ContainsTextInsensitive(output->friendlyName, L"I2C") ||
         ContainsTextInsensitive(output->description, L"SMBus") ||
-        ContainsTextInsensitive(output->description, L"I2C");
+        ContainsTextInsensitive(output->hardwareIds, L"SMBUS");
+
+    output->isI2cDevice =
+        ContainsTextInsensitive(output->friendlyName, L"I2C") ||
+        ContainsTextInsensitive(output->description, L"I2C") ||
+        ContainsTextInsensitive(output->hardwareIds, L"I2C");
+
+    output->isUsbDevice =
+        ContainsTextInsensitive(output->instanceId, L"USB\\");
+
+    output->isBusController =
+        output->isSmbusDevice || output->isI2cDevice;
 
     output->isPowerController =
         ContainsTextInsensitive(output->instanceId, L"PNP0C09") ||
@@ -252,6 +267,8 @@ BOOL IsRelevantDevice(const DEVICE_INFO* device)
     return device->isBattery ||
         device->isAcpiDevice ||
         device->isPowerController ||
+        device->isBusController ||
+        (device->isUsbDevice && device->hasProblem) ||
         device->hasProblem;
 }
 
@@ -659,6 +676,9 @@ void ScanPresentDevices(void)
     DWORD controllers = 0;
     DWORD embeddedControllers = 0;
     DWORD busControllers = 0;
+    DWORD usbDevices = 0;
+    DWORD i2cDevices = 0;
+    DWORD smbusDevices = 0;
     DWORD problemDevices = 0;
 
     wprintf(L"\n=== PNP HARDWARE SCAN ===\n");
@@ -697,6 +717,9 @@ void ScanPresentDevices(void)
         if (info.isPowerController) controllers++;
         if (info.isEmbeddedController) embeddedControllers++;
         if (info.isBusController) busControllers++;
+        if (info.isUsbDevice) usbDevices++;
+        if (info.isI2cDevice) i2cDevices++;
+        if (info.isSmbusDevice) smbusDevices++;
         if (info.hasProblem) problemDevices++;
 
         if (IsRelevantDevice(&info))
@@ -719,7 +742,149 @@ void ScanPresentDevices(void)
     wprintf(L"Devices with PnP problems: %lu\n", problemDevices);
 }
 
-int wmain(void)
+
+
+/*
+ * Windows power-plan management uses documented PowerCfg APIs.
+ * It changes only the active Windows power scheme; it never writes
+ * directly to battery-controller registers.
+ */
+static const GUID GUID_UBM_BALANCED =
+{ 0x381b4222, 0xf694, 0x41f0, { 0x96, 0x85, 0xff, 0x5f, 0xf5, 0x5b, 0x26, 0x0e } };
+static const GUID GUID_UBM_PERFORMANCE =
+{ 0x8c5e7fda, 0xe8bf, 0x4a96, { 0x9a, 0x85, 0xa6, 0xe2, 0x3a, 0x8c, 0x63, 0x5c } };
+static const GUID GUID_UBM_SAVER =
+{ 0xa1841308, 0x3541, 0x4fab, { 0xbc, 0x81, 0xf7, 0x15, 0x56, 0xf2, 0x0b, 0x4a } };
+
+static BOOL IsKnownPlan(const GUID* plan, const WCHAR* alias)
+{
+    if (_wcsicmp(alias, L"balanced") == 0)
+        return IsEqualGUID(plan, &GUID_UBM_BALANCED);
+    if (_wcsicmp(alias, L"performance") == 0 || _wcsicmp(alias, L"high-performance") == 0)
+        return IsEqualGUID(plan, &GUID_UBM_PERFORMANCE);
+    if (_wcsicmp(alias, L"saver") == 0 || _wcsicmp(alias, L"power-saver") == 0)
+        return IsEqualGUID(plan, &GUID_UBM_SAVER);
+    return FALSE;
+}
+
+void PrintPowerPlans(void)
+{
+    DWORD index = 0;
+    DWORD size;
+    GUID scheme;
+    GUID* active = NULL;
+    DWORD activeResult = PowerGetActiveScheme(NULL, &active);
+
+    wprintf(L"\n=== WINDOWS POWER PLANS ===\n");
+    if (activeResult != ERROR_SUCCESS)
+        wprintf(L"Active scheme query failed: %lu\n", activeResult);
+
+    for (;;)
+    {
+        WCHAR name[256];
+        DWORD nameSize = sizeof(name);
+        DWORD result;
+
+        ZeroMemory(&scheme, sizeof(scheme));
+        size = sizeof(scheme);
+        result = PowerEnumerate(
+            NULL, NULL, NULL, ACCESS_SCHEME, index,
+            (UCHAR*)&scheme, &size
+        );
+
+        if (result == ERROR_NO_MORE_ITEMS)
+            break;
+        if (result != ERROR_SUCCESS)
+        {
+            wprintf(L"Power scheme enumeration failed: %lu\n", result);
+            break;
+        }
+
+        ZeroMemory(name, sizeof(name));
+        if (PowerReadFriendlyName(
+            NULL, &scheme, NULL, NULL, (UCHAR*)name, &nameSize
+        ) != ERROR_SUCCESS || name[0] == L'\0')
+        {
+            wcscpy_s(name, _countof(name), L"Unnamed power plan");
+        }
+
+        wprintf(L"%c %ls\n",
+            (active != NULL && IsEqualGUID(active, &scheme)) ? L'*' : L' ',
+            name);
+        index++;
+    }
+
+    if (index == 0)
+        wprintf(L"No power schemes were returned by Windows.\n");
+
+    if (active != NULL)
+        LocalFree(active);
+}
+
+BOOL SetPowerPlanByName(const WCHAR* name)
+{
+    DWORD index = 0;
+    DWORD size;
+    GUID scheme;
+    BOOL found = FALSE;
+    DWORD result = ERROR_NOT_FOUND;
+
+    if (name == NULL || name[0] == L'\0')
+        return FALSE;
+
+    for (;;)
+    {
+        WCHAR friendlyName[256];
+        DWORD nameSize = sizeof(friendlyName);
+
+        ZeroMemory(&scheme, sizeof(scheme));
+        size = sizeof(scheme);
+        result = PowerEnumerate(
+            NULL, NULL, NULL, ACCESS_SCHEME, index,
+            (UCHAR*)&scheme, &size
+        );
+
+        if (result == ERROR_NO_MORE_ITEMS)
+            break;
+        if (result != ERROR_SUCCESS)
+        {
+            wprintf(L"Cannot enumerate power plans: %lu\n", result);
+            return FALSE;
+        }
+
+        ZeroMemory(friendlyName, sizeof(friendlyName));
+        PowerReadFriendlyName(
+            NULL, &scheme, NULL, NULL,
+            (UCHAR*)friendlyName, &nameSize
+        );
+
+        if (IsKnownPlan(&scheme, name) ||
+            _wcsicmp(friendlyName, name) == 0)
+        {
+            found = TRUE;
+            break;
+        }
+        index++;
+    }
+
+    if (!found)
+    {
+        wprintf(L"Requested power plan was not found: %ls\n", name);
+        return FALSE;
+    }
+
+    result = PowerSetActiveScheme(NULL, &scheme);
+    if (result != ERROR_SUCCESS)
+    {
+        wprintf(L"Windows rejected the power-plan change: %lu\n", result);
+        return FALSE;
+    }
+
+    wprintf(L"Windows power plan changed successfully.\n");
+    return TRUE;
+}
+
+int wmain(int argc, wchar_t** argv)
 {
     wprintf(
         L"\n"

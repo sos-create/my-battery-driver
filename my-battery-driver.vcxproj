@@ -73,6 +73,7 @@
       <AdditionalDependencies>
         Setupapi.lib;
         Cfgmgr32.lib;
+        PowrProf.lib;
         %(AdditionalDependencies)
       </AdditionalDependencies>
     </Link>

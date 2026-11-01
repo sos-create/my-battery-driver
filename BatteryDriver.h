@@ -16,6 +16,7 @@
 #include <devguid.h>
 #include <devpkey.h>
 #include <poclass.h>
+#include <powrprof.h>
 
 #ifndef FILE_DEVICE_BATTERY
 #define FILE_DEVICE_BATTERY 0x00000029
@@ -32,6 +33,7 @@
 #define MAX_CLASS_NAME 128
 #define MAX_MANUFACTURER 256
 #define MAX_HARDWARE_IDS 2048
+#define MAX_SERVICE_NAME 256
 #define BATTERY_POLL_INTERVAL_MS 5000
 
 typedef struct _DEVICE_INFO
@@ -42,6 +44,7 @@ typedef struct _DEVICE_INFO
     WCHAR className[MAX_CLASS_NAME];
     WCHAR manufacturer[MAX_MANUFACTURER];
     WCHAR hardwareIds[MAX_HARDWARE_IDS];
+    WCHAR serviceName[MAX_SERVICE_NAME];
 
     DWORD devNodeStatus;
     ULONG problemCode;
@@ -53,6 +56,9 @@ typedef struct _DEVICE_INFO
     BOOL isPowerController;
     BOOL isEmbeddedController;
     BOOL isBusController;
+    BOOL isUsbDevice;
+    BOOL isI2cDevice;
+    BOOL isSmbusDevice;
 
 } DEVICE_INFO, *PDEVICE_INFO;
 
@@ -75,6 +81,8 @@ void PrintDevice(
 );
 
 void PrintBatteryStatus(void);
+void PrintPowerPlans(void);
+BOOL SetPowerPlanByName(const WCHAR* name);
 
 BOOL IsRelevantDevice(
     const DEVICE_INFO* device
