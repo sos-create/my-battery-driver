@@ -426,7 +426,18 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE previous, PWSTR commandLine, i
     MSG message;
 
     (void)previous;
-    (void)commandLine;
+    if (commandLine != NULL && wcsstr(commandLine, L"--smoke-test") != NULL)
+    {
+        SYSTEM_POWER_STATUS power;
+        HDEVINFO batterySet;
+        if (!GetSystemPowerStatus(&power)) return 2;
+        batterySet = SetupDiGetClassDevsW(
+            &GUID_DEVCLASS_BATTERY, NULL, NULL, DIGCF_PRESENT
+        );
+        if (batterySet == INVALID_HANDLE_VALUE) return 3;
+        SetupDiDestroyDeviceInfoList(batterySet);
+        return 0;
+    }
 
     ZeroMemory(&wc, sizeof(wc));
     wc.lpfnWndProc = WindowProc;

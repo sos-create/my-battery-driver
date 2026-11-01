@@ -92,6 +92,18 @@ jobs:
           Write-Host "CLI build successful: $exe"
           Write-Host "GUI build successful: $gui"
 
+      - name: Smoke test executables
+        shell: pwsh
+        run: |
+          & $exe --help
+          if ($LASTEXITCODE -ne 0) { throw "CLI help smoke test failed" }
+
+          & $exe --list-plans
+          if ($LASTEXITCODE -ne 0) { throw "Power plan query smoke test failed" }
+
+          & $gui --smoke-test
+          if ($LASTEXITCODE -ne 0) { throw "GUI startup smoke test failed" }
+
       - name: Upload compiled files
         uses: actions/upload-artifact@v4
 
