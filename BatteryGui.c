@@ -42,7 +42,7 @@ static void AddText(const WCHAR* format, ...)
     va_end(args);
 
     if (length < 0)
-        buffer[_countof(buffer) - 1] = L'\0';
+        buffer[(sizeof(buffer) / sizeof(buffer[0])) - 1] = L'\0';
 
     if (g_output != NULL)
     {
