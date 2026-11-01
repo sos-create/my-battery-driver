@@ -113,10 +113,23 @@ jobs:
           & $gui --smoke-test
           if ($LASTEXITCODE -ne 0) { throw "GUI startup smoke test failed" }
 
+      - name: Package release files
+        shell: pwsh
+        run: |
+          $dist = Join-Path $env:GITHUB_WORKSPACE "dist"
+          $adapterDir = Join-Path $dist "Adapters"
+          New-Item -ItemType Directory -Force -Path $adapterDir | Out-Null
+          Copy-Item $exe (Join-Path $dist "UniversalBatteryManager.exe")
+          Copy-Item $gui (Join-Path $dist "UniversalBatteryManagerGUI.exe")
+          Copy-Item $adapter (Join-Path $adapterDir "UniversalBatteryManagerAdapterTemplate.dll")
+          $packaged = @(Get-ChildItem $dist -File -Recurse)
+          if ($packaged.Count -ne 3) { throw "Expected exactly 3 release files, found $($packaged.Count)" }
+          Write-Host "Packaged clean release: $($packaged.Count) files"
+
       - name: Upload compiled files
         uses: actions/upload-artifact@v4
 
         with:
           name: UniversalBatteryManager-${{ matrix.platform }}
-          path: artifacts/${{ matrix.platform }}/Release/
+          path: dist/
           if-no-files-found: error
