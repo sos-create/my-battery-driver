@@ -13,13 +13,13 @@
 #include <cfgmgr32.h>
 #include <cfg.h>
 #include <devguid.h>
+#include <devpkey.h>
 #include <stdio.h>
 #include <wchar.h>
 #include <wctype.h>
 
 #define APP_NAME L"Universal Battery Manager"
-#define APP_VERSION L"0.3.0"
-
+#define APP_VERSION L"0.2.0"
 #define MAX_INSTANCE_ID 1024
 #define MAX_DEVICE_NAME 512
 #define MAX_CLASS_NAME 128
