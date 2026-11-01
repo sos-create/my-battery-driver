@@ -1,0 +1,90 @@
+name: Universal Battery Manager Build
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: windows-2022
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - Win32
+          - x64
+
+    steps:
+      - name: Download source
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Check project files
+        shell: pwsh
+        run: |
+          $required = @(
+            "BatteryDriver.c",
+            "BatteryDriver.h",
+            "my-battery-driver.sln",
+            "my-battery-driver.vcxproj"
+          )
+
+          foreach ($file in $required) {
+            if (!(Test-Path $file)) {
+              throw "Missing file: $file"
+            }
+
+            Write-Host "Found: $file"
+          }
+
+      - name: Build solution
+        shell: pwsh
+        run: |
+          $solution = Join-Path `
+            $env:GITHUB_WORKSPACE `
+            "my-battery-driver.sln"
+
+          msbuild $solution `
+            /m `
+            /v:minimal `
+            /p:Configuration=Release `
+            /p:Platform=${{ matrix.platform }}
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "MSBuild failed: $LASTEXITCODE"
+          }
+
+      - name: Verify executable
+        shell: pwsh
+        run: |
+          $exe = Join-Path `
+            $env:GITHUB_WORKSPACE `
+            "artifacts\${{ matrix.platform }}\Release\UniversalBatteryManager.exe"
+
+          if (!(Test-Path $exe)) {
+            throw "Executable not found: $exe"
+          }
+
+          Write-Host "Build successful: $exe"
+
+      - name: Upload compiled files
+        uses: actions/upload-artifact@v4
+
+        with:
+          name: UniversalBatteryManager-${{ matrix.platform }}
+          path: artifacts/${{ matrix.platform }}/Release/
+          if-no-files-found: error
