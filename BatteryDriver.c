@@ -1,3 +1,4 @@
+
 #include "BatteryDriver.h"
 
 static void PrintSeparator(void)
@@ -12,14 +13,14 @@ BOOL ContainsTextInsensitive(
     const WCHAR* part
 )
 {
-    size_t partLength;
+    size_t length;
 
     if (text == NULL || part == NULL)
         return FALSE;
 
-    partLength = wcslen(part);
+    length = wcslen(part);
 
-    if (partLength == 0)
+    if (length == 0)
         return TRUE;
 
     while (*text != L'\0')
@@ -27,7 +28,7 @@ BOOL ContainsTextInsensitive(
         size_t i = 0;
 
         while (
-            i < partLength &&
+            i < length &&
             text[i] != L'\0' &&
             towlower(text[i]) == towlower(part[i])
         )
@@ -35,7 +36,7 @@ BOOL ContainsTextInsensitive(
             i++;
         }
 
-        if (i == partLength)
+        if (i == length)
             return TRUE;
 
         text++;
@@ -109,11 +110,6 @@ static void ReadHardwareIds(
         return;
     }
 
-    /*
-       Hardware IDs are stored as MULTI_SZ.
-       Replace separators with semicolons for readable output.
-    */
-
     for (i = 0; i + 1 < bufferChars; i++)
     {
         if (buffer[i] == L'\0')
@@ -138,21 +134,27 @@ BOOL ReadDeviceInfo(
     ULONG problem = 0;
     ULONG status = 0;
 
-    if (output == NULL || deviceData == NULL)
+    if (
+        deviceSet == INVALID_HANDLE_VALUE ||
+        deviceData == NULL ||
+        output == NULL
+    )
+    {
         return FALSE;
+    }
 
-    ZeroMemory(
-        output,
-        sizeof(DEVICE_INFO)
-    );
+    ZeroMemory(output, sizeof(DEVICE_INFO));
 
-    SetupDiGetDeviceInstanceIdW(
+    if (!SetupDiGetDeviceInstanceIdW(
         deviceSet,
         deviceData,
         output->instanceId,
         MAX_INSTANCE_ID,
         NULL
-    );
+    ))
+    {
+        return FALSE;
+    }
 
     ReadRegistryString(
         deviceSet,
@@ -205,7 +207,14 @@ BOOL ReadDeviceInfo(
     );
 
     /*
-       Get Plug and Play status.
+       The device was enumerated using DIGCF_PRESENT.
+       Therefore it is currently present in the device list.
+    */
+
+    output->isPresent = TRUE;
+
+    /*
+       Obtain PnP status and problem code.
     */
 
     result = CM_Get_DevNode_Status(
@@ -219,13 +228,11 @@ BOOL ReadDeviceInfo(
     {
         output->devNodeStatus = status;
         output->problemCode = problem;
-
         output->hasProblem = (problem != 0);
-        output->isPresent = ((status & DN_PRESENT) != 0);
     }
 
     /*
-       Detect battery devices.
+       Battery detection.
     */
 
     output->isBattery =
@@ -247,8 +254,7 @@ BOOL ReadDeviceInfo(
         );
 
     /*
-       Detect ACPI devices.
-       This does NOT mean every ACPI device is a battery controller.
+       ACPI detection.
     */
 
     output->isAcpiDevice =
@@ -276,7 +282,7 @@ BOOL ReadDeviceInfo(
         );
 
     /*
-       Bus controller detection.
+       SMBus / I2C detection.
     */
 
     output->isBusController =
@@ -298,7 +304,7 @@ BOOL ReadDeviceInfo(
         );
 
     /*
-       Known power-related ACPI identifiers and descriptions.
+       Power-related device detection.
     */
 
     output->isPowerController =
@@ -317,7 +323,7 @@ BOOL ReadDeviceInfo(
             L"Power Management"
         );
 
-    return output->instanceId[0] != L'\0';
+    return TRUE;
 }
 
 BOOL IsRelevantDevice(
@@ -376,7 +382,7 @@ void PrintDevice(
 
     wprintf(
         L"Present          : %ls\n",
-        device->isPresent ? L"YES" : L"NO / UNKNOWN"
+        device->isPresent ? L"YES" : L"NO"
     );
 
     wprintf(
@@ -418,6 +424,8 @@ void PrintBatteryStatus(void)
 
     wprintf(L"\n=== WINDOWS BATTERY STATUS ===\n");
 
+    ZeroMemory(&power, sizeof(power));
+
     if (!GetSystemPowerStatus(&power))
     {
         wprintf(
@@ -437,9 +445,7 @@ void PrintBatteryStatus(void)
 
     if (power.BatteryLifePercent == 255)
     {
-        wprintf(
-            L"Battery charge   : UNKNOWN\n"
-        );
+        wprintf(L"Battery charge   : UNKNOWN\n");
     }
     else
     {
@@ -449,41 +455,33 @@ void PrintBatteryStatus(void)
         );
     }
 
-    if (power.BatteryFlag & 128)
+    if (power.BatteryFlag == 255)
     {
-        wprintf(
-            L"Battery status   : NO SYSTEM BATTERY\n"
-        );
+        wprintf(L"Battery status   : UNKNOWN\n");
+    }
+    else if (power.BatteryFlag & 128)
+    {
+        wprintf(L"Battery status   : NO SYSTEM BATTERY\n");
     }
     else if (power.BatteryFlag & 8)
     {
-        wprintf(
-            L"Battery status   : CHARGING\n"
-        );
-    }
-    else if (power.BatteryFlag & 1)
-    {
-        wprintf(
-            L"Battery status   : HIGH CHARGE\n"
-        );
-    }
-    else if (power.BatteryFlag & 2)
-    {
-        wprintf(
-            L"Battery status   : LOW CHARGE\n"
-        );
+        wprintf(L"Battery status   : CHARGING\n");
     }
     else if (power.BatteryFlag & 4)
     {
-        wprintf(
-            L"Battery status   : CRITICAL CHARGE\n"
-        );
+        wprintf(L"Battery status   : CRITICAL CHARGE\n");
+    }
+    else if (power.BatteryFlag & 2)
+    {
+        wprintf(L"Battery status   : LOW CHARGE\n");
+    }
+    else if (power.BatteryFlag & 1)
+    {
+        wprintf(L"Battery status   : HIGH CHARGE\n");
     }
     else
     {
-        wprintf(
-            L"Battery status   : UNKNOWN\n"
-        );
+        wprintf(L"Battery status   : UNKNOWN\n");
     }
 
     wprintf(
@@ -493,9 +491,7 @@ void PrintBatteryStatus(void)
 
     if (power.BatteryLifeTime == (DWORD)-1)
     {
-        wprintf(
-            L"Remaining time   : UNKNOWN\n"
-        );
+        wprintf(L"Remaining time   : UNKNOWN\n");
     }
     else
     {
@@ -507,9 +503,7 @@ void PrintBatteryStatus(void)
 
     if (power.BatteryFullLifeTime == (DWORD)-1)
     {
-        wprintf(
-            L"Full battery time: UNKNOWN\n"
-        );
+        wprintf(L"Full battery time: UNKNOWN\n");
     }
     else
     {
@@ -523,11 +517,9 @@ void PrintBatteryStatus(void)
 void ScanPresentDevices(void)
 {
     HDEVINFO deviceSet;
-
     SP_DEVINFO_DATA deviceData;
 
-    DWORD index = 0;
-
+    DWORD index;
     DWORD total = 0;
     DWORD batteries = 0;
     DWORD acpiDevices = 0;
@@ -536,20 +528,17 @@ void ScanPresentDevices(void)
     DWORD busControllers = 0;
     DWORD problemDevices = 0;
 
-    wprintf(
-        L"\n=== HARDWARE SCAN ===\n"
-    );
+    wprintf(L"\n=== HARDWARE SCAN ===\n");
 
     /*
-       Enumerate all device nodes, including non-present devices.
-       This helps identify devices left behind after driver removal.
+       Enumerate only devices currently present.
     */
 
     deviceSet = SetupDiGetClassDevsW(
         NULL,
         NULL,
         NULL,
-        DIGCF_ALLCLASSES
+        DIGCF_ALLCLASSES | DIGCF_PRESENT
     );
 
     if (deviceSet == INVALID_HANDLE_VALUE)
@@ -624,7 +613,6 @@ void ScanPresentDevices(void)
         if (IsRelevantDevice(&info))
         {
             PrintSeparator();
-
             PrintDevice(&info);
         }
     }
@@ -633,9 +621,7 @@ void ScanPresentDevices(void)
 
     PrintSeparator();
 
-    wprintf(
-        L"\n=== SCAN RESULTS ===\n"
-    );
+    wprintf(L"\n=== SCAN RESULTS ===\n");
 
     wprintf(
         L"Total device nodes       : %lu\n",
@@ -699,13 +685,9 @@ int wmain(void)
 
     ScanPresentDevices();
 
-    wprintf(
-        L"\nDiagnostic finished.\n"
-    );
+    wprintf(L"\nDiagnostic finished.\n");
 
-    wprintf(
-        L"Press ENTER to close..."
-    );
+    wprintf(L"Press ENTER to close...");
 
     (void)getwchar();
 
