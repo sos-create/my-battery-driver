@@ -1,3 +1,4 @@
+
 #pragma once
 
 #ifndef UNICODE
@@ -18,7 +19,7 @@
 #include <wctype.h>
 
 #define APP_NAME L"Universal Battery Manager"
-#define APP_VERSION L"0.2.0"
+#define APP_VERSION L"0.3.0"
 
 #define MAX_INSTANCE_ID 1024
 #define MAX_DEVICE_NAME 512
