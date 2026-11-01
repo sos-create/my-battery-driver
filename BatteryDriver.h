@@ -11,6 +11,7 @@
 #include <windows.h>
 #include <setupapi.h>
 #include <cfgmgr32.h>
+#include <cfg.h>
 #include <devguid.h>
 #include <stdio.h>
 #include <wchar.h>
