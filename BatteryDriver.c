@@ -224,12 +224,33 @@ BOOL ReadDeviceInfo(
         0
     );
 
-    if (result == CR_SUCCESS)
+if (result == CR_SUCCESS)
+{
+    DEVPROP_BOOLEAN present = DEVPROP_FALSE;
+    DEVPROPTYPE propertyType = DEVPROP_TYPE_EMPTY;
+
+    output->devNodeStatus = status;
+    output->problemCode = problem;
+    output->hasProblem = (problem != 0);
+
+    if (SetupDiGetDevicePropertyW(
+        deviceSet,
+        deviceData,
+        &DEVPKEY_Device_IsPresent,
+        &propertyType,
+        (PBYTE)&present,
+        sizeof(present),
+        NULL,
+        0
+    ))
     {
-        output->devNodeStatus = status;
-        output->problemCode = problem;
-        output->hasProblem = (problem != 0);
+        if (propertyType == DEVPROP_TYPE_BOOLEAN)
+        {
+            output->isPresent =
+                (present == DEVPROP_TRUE);
+        }
     }
+}
 
     /*
        Battery detection.
