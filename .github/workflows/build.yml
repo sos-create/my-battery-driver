@@ -2,48 +2,89 @@ name: Universal Battery Manager Build
 
 on:
   push:
+    branches:
+      - main
 
   pull_request:
+    branches:
+      - main
 
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-
   build:
-
+    name: Build ${{ matrix.platform }}
     runs-on: windows-2022
 
-    steps:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - Win32
+          - x64
 
+    steps:
       - name: Download source
         uses: actions/checkout@v4
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Build x86
+      - name: Check project files
         shell: pwsh
         run: |
-          msbuild my-battery-driver.sln `
-            /m `
-            /p:Configuration=Release `
-            /p:Platform=Win32
+          $required = @(
+            "BatteryDriver.c",
+            "BatteryDriver.h",
+            "my-battery-driver.sln",
+            "my-battery-driver.vcxproj"
+          )
 
-      - name: Build x64
+          foreach ($file in $required) {
+            if (!(Test-Path $file)) {
+              throw "Missing file: $file"
+            }
+
+            Write-Host "Found: $file"
+          }
+
+      - name: Build solution
         shell: pwsh
         run: |
-          msbuild my-battery-driver.sln `
+          $solution = Join-Path `
+            $env:GITHUB_WORKSPACE `
+            "my-battery-driver.sln"
+
+          msbuild $solution `
             /m `
+            /v:minimal `
             /p:Configuration=Release `
-            /p:Platform=x64
+            /p:Platform=${{ matrix.platform }}
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "MSBuild failed: $LASTEXITCODE"
+          }
+
+      - name: Verify executable
+        shell: pwsh
+        run: |
+          $exe = Join-Path `
+            $env:GITHUB_WORKSPACE `
+            "artifacts\${{ matrix.platform }}\Release\UniversalBatteryManager.exe"
+
+          if (!(Test-Path $exe)) {
+            throw "Executable not found: $exe"
+          }
+
+          Write-Host "Build successful: $exe"
 
       - name: Upload compiled files
         uses: actions/upload-artifact@v4
 
         with:
-
-          name: UniversalBatteryManager-Windows
-
-          path: artifacts/
-
+          name: UniversalBatteryManager-${{ matrix.platform }}
+          path: artifacts/${{ matrix.platform }}/Release/
           if-no-files-found: error
